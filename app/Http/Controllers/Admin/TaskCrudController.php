@@ -29,6 +29,11 @@ class TaskCrudController extends CrudController
         CRUD::setModel(\App\Models\Task::class);
         CRUD::setRoute(config('backpack.base.route_prefix') . '/task');
         CRUD::setEntityNameStrings('task', 'tasks');
+
+        // Admin e manager possono gestire i task
+        if (!backpack_user()->hasAnyRole(['admin', 'manager'])) {
+            abort(403, 'Non hai i permessi per accedere a questa sezione.');
+        }
     }
 
     /**

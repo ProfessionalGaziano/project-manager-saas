@@ -29,6 +29,11 @@ class ProjectCrudController extends CrudController
         CRUD::setModel(\App\Models\Project::class);
         CRUD::setRoute(config('backpack.base.route_prefix') . '/project');
         CRUD::setEntityNameStrings('project', 'projects');
+
+        // Admin e manager possono gestire i progetti
+        if (!backpack_user()->hasAnyRole(['admin', 'manager'])) {
+            abort(403, 'Non hai i permessi per accedere a questa sezione.');
+        }
     }
 
     /**

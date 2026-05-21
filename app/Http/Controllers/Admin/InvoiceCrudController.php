@@ -29,6 +29,11 @@ class InvoiceCrudController extends CrudController
         CRUD::setModel(\App\Models\Invoice::class);
         CRUD::setRoute(config('backpack.base.route_prefix') . '/invoice');
         CRUD::setEntityNameStrings('invoice', 'invoices');
+    
+        // Solo admin possono gestire le fatture
+        if (!backpack_user()->hasRole('admin')) {
+            abort(403, 'Non hai i permessi per accedere a questa sezione.');
+        }
     }
 
     /**

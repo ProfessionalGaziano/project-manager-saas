@@ -29,6 +29,11 @@ class TeamCrudController extends CrudController
         CRUD::setModel(\App\Models\Team::class);
         CRUD::setRoute(config('backpack.base.route_prefix') . '/team');
         CRUD::setEntityNameStrings('team', 'teams');
+
+        // Solo gli admin possono gestire i team
+        if (!backpack_user()->hasRole('admin')) {
+            abort(403, 'Non hai i permessi per accedere a questa sezione.');
+        }
     }
 
     /**
