@@ -44,7 +44,12 @@ class TeamCrudController extends CrudController
      */
     protected function setupListOperation()
     {
-        CRUD::setFromDb(); // set columns from db columns.
+        CRUD::addClause('where', 'owner_id', backpack_user()->id);
+
+        CRUD::column('name')->label('Nome');
+        CRUD::column('slug')->label('Slug');
+        CRUD::column('plan')->label('Piano');
+        CRUD::column('created_at')->type('datetime')->label('Data Creazione');
 
         /**
          * Columns can be defined using the fluent syntax:
@@ -61,17 +66,19 @@ class TeamCrudController extends CrudController
     protected function setupCreateOperation()
     {
         CRUD::setValidation(TeamRequest::class);
+        CRUD::field('owner_id')->type('hidden')->value(backpack_user()->id);
 
         CRUD::field('name')->type('text')->label('Nome');
         CRUD::field('slug')->type('text')->label('Slug');
 
+        /*
         CRUD::field('owner_id')
             ->type('select')
             ->label('Proprietario')
             ->model('App\Models\User')
             ->attribute('name')
             ->allows_null(false);
-
+        */
         CRUD::field('plan')
             ->type('select_from_array')
             ->label('Piano')

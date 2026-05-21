@@ -44,7 +44,19 @@ class ProjectCrudController extends CrudController
      */
     protected function setupListOperation()
     {
-        CRUD::setFromDb(); // set columns from db columns.
+        CRUD::addClause('where', 'team_id', session('active_team_id'));
+
+        //CRUD::addClause('where', 'team_id', backpack_user()->id);
+    
+        CRUD::column('name')->label('Nome');
+        CRUD::column('team_id')
+            ->type('select')
+            ->label('Team')
+            ->model('App\Models\Team')
+            ->attribute('name');
+        CRUD::column('status')->label('Stato');
+        CRUD::column('deadline')->type('date')->label('Scadenza');
+        CRUD::column('created_at')->type('datetime')->label('Data Creazione');
 
         /**
          * Columns can be defined using the fluent syntax:
@@ -62,6 +74,7 @@ class ProjectCrudController extends CrudController
     {
        
         CRUD::setValidation(ProjectRequest::class);
+        CRUD::field('team_id')->value(session('active_team_id'))->type('hidden');
 
         CRUD::field('team_id')
             ->type('select')

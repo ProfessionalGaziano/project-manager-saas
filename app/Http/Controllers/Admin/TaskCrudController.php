@@ -44,8 +44,26 @@ class TaskCrudController extends CrudController
      */
     protected function setupListOperation()
     {
-        CRUD::setFromDb(); // set columns from db columns.
+        CRUD::addClause('whereHas', 'project', function($query) {
+            $query->where('team_id', session('active_team_id'));
+        });
 
+        CRUD::column('title')->label('Titolo');
+        CRUD::column('project_id')
+            ->type('select')
+            ->label('Progetto')
+            ->model('App\Models\Project')
+            ->attribute('name')
+            ->entity('project');
+        CRUD::column('assigned_to')
+            ->type('select')
+            ->label('Assegnato a')
+            ->model('App\Models\User')
+            ->attribute('name')
+            ->entity('assignedTo');
+        CRUD::column('status')->label('Stato');
+        CRUD::column('priority')->label('Priorità');
+        CRUD::column('due_date')->type('date')->label('Scadenza');
         /**
          * Columns can be defined using the fluent syntax:
          * - CRUD::column('price')->type('number');
@@ -62,6 +80,14 @@ class TaskCrudController extends CrudController
     protected function setupCreateOperation()
     {
         CRUD::setValidation(TaskRequest::class);
+        CRUD::field('project_id')
+            ->type('select')
+            ->label('Progetto')
+            ->model('App\Models\Project')
+            ->attribute('name')
+        ->options(function($query) {
+                return $query->where('team_id', session('active_team_id'))->get();
+        });
 
         CRUD::field('project_id')
             ->type('select')
@@ -74,7 +100,13 @@ class TaskCrudController extends CrudController
             ->label('Assegnato a')
             ->model('App\Models\User')
             ->attribute('name')
-            ->allows_null(true);
+        ->options(function($query) {
+            // Mostra solo gli utenti che appartengono al team attivo
+            return $query->whereHas('teams', function($q) {
+                $q->where('teams.id', session('active_team_id'));
+            })->get();
+        })
+        ->allows_null(true);
 
         CRUD::field('title')->type('text')->label('Titolo');
         CRUD::field('description')->type('textarea')->label('Descrizione');

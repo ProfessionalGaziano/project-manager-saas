@@ -44,6 +44,10 @@ class InvoiceCrudController extends CrudController
      */
     protected function setupListOperation()
     {
+        CRUD::addClause('whereHas', 'team', function($query) {
+             $query->where('owner_id', backpack_user()->id);
+        });
+
         CRUD::column('number')->label('Numero Fattura');
 
         CRUD::column('team_id')
@@ -73,20 +77,30 @@ class InvoiceCrudController extends CrudController
      */
     protected function setupCreateOperation()
     {
+        //dd(session('active_team_id'));
         CRUD::setValidation(InvoiceRequest::class);
+        CRUD::field('team_id')->value(session('active_team_id'))->type('hidden');
 
-        CRUD::field('team_id')
-            ->type('select')
-            ->label('Team')
-            ->model('App\Models\Team')
-            ->attribute('name');
+       CRUD::field('team_id')
+        ->type('select')
+        ->label('Team')
+        ->model('App\Models\Team')
+        ->attribute('name')
+        ->options(function($query) {
+            // Mostra solo i team dove l'utente è owner
+            return $query->where('owner_id', backpack_user()->id)->get();
+        });
 
         CRUD::field('project_id')
-            ->type('select')
-            ->label('Progetto')
-            ->model('App\Models\Project')
-            ->attribute('name')
-            ->allows_null(true);
+        ->type('select')
+        ->label('Progetto')
+        ->model('App\Models\Project')
+        ->attribute('name')
+        ->options(function($query) {
+            // Mostra solo i progetti del team attivo
+            return $query->where('team_id', session('active_team_id'))->get();
+        })
+        ->allows_null(true);
 
         CRUD::field('number')->type('text')->label('Numero Fattura');
         CRUD::field('amount')->type('number')->label('Importo')->attributes(['step' => '0.01']);
