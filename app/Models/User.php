@@ -45,4 +45,23 @@ class User extends Authenticatable
             'password' => 'hashed',
         ];
     }
+
+    // L'utente può essere owner di molti team
+    public function ownedTeams()
+    {
+        return $this->hasMany(Team::class, 'owner_id');
+    }
+
+    // L'utente appartiene a molti team
+    public function teams()
+    {
+        return $this->belongsToMany(Team::class)->withPivot('role')->withTimestamps();
+    }
+
+    // L'utente ha molti task assegnati
+    public function tasks()
+    {
+        return $this->hasMany(Task::class, 'assigned_to');
+    }
+    
 }
