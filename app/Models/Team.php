@@ -6,10 +6,11 @@ use Backpack\CRUD\app\Models\Traits\CrudTrait;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\SoftDeletes;
+use Laravel\Cashier\Billable;
 
 class Team extends Model
 {
-    use CrudTrait, HasFactory, SoftDeletes;
+    use CrudTrait, HasFactory, SoftDeletes, Billable;
 
     protected $fillable = [
         'name',

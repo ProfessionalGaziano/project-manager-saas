@@ -5,3 +5,4 @@
 <x-backpack::menu-item title="Projects" icon="la la-question" :link="backpack_url('project')" />
 <x-backpack::menu-item title="Tasks" icon="la la-question" :link="backpack_url('task')" />
 <x-backpack::menu-item title="Invoices" icon="la la-question" :link="backpack_url('invoice')" />
+<x-backpack::menu-item title="Abbonamento" icon="la la-credit-card" :link="url('subscription/plans')" />
