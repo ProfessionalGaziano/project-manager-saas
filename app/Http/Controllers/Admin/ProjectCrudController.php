@@ -30,8 +30,19 @@ class ProjectCrudController extends CrudController
         CRUD::setRoute(config('backpack.base.route_prefix') . '/project');
         CRUD::setEntityNameStrings('project', 'projects');
 
+        $user = backpack_user();
+
         // Admin e manager possono gestire i progetti
-        if (!backpack_user()->hasAnyRole(['admin', 'manager'])) {
+        if (!backpack_user()->hasAnyRole(['admin', 'manager', 'client'])) {
+            abort(403, 'Non hai i permessi per accedere a questa sezione.');
+        }
+
+        if ($user->hasRole('client')) {
+        CRUD::denyAccess(['create', 'update', 'delete']);
+        return;
+        }
+
+        if (!$user->hasAnyRole(['admin', 'manager'])) {
             abort(403, 'Non hai i permessi per accedere a questa sezione.');
         }
     }
