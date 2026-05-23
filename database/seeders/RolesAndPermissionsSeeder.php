@@ -36,6 +36,13 @@ class RolesAndPermissionsSeeder extends Seeder
             'view invoices',
         ]);
 
+        $employee = Role::create(['name' => 'employee']);
+        $employee->givePermissionTo([
+            'manage own tasks',
+            'view projects',
+        ]);
+        Permission::create(['name' => 'manage own tasks']);
+
         $client = Role::create(['name' => 'client']);
         $client->givePermissionTo([
             'view projects',

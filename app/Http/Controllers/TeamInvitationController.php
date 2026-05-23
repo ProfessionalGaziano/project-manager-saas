@@ -18,7 +18,7 @@ class TeamInvitationController extends Controller
     {
         $request->validate([
             'email' => 'required|email',
-            'role'  => 'required|in:manager,client',
+            'role' => 'required|in:manager,employee,client',
         ]);
 
         $team = backpack_user()->ownedTeams()->first();

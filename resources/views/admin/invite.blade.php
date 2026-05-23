@@ -44,6 +44,7 @@
                                 <label class="form-label">Ruolo</label>
                                 <select name="role" class="form-select">
                                     <option value="manager">Manager</option>
+                                    <option value="employee">Employee</option>
                                     <option value="client">Client</option>
                                 </select>
                             </div>
