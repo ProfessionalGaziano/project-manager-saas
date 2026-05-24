@@ -57,8 +57,26 @@ class ProjectCrudController extends CrudController
     {
         CRUD::addClause('where', 'team_id', session('active_team_id'));
 
+        if (backpack_user()->hasRole('manager')) {
+            CRUD::addClause('where', 'manager_id', backpack_user()->id);
+        }
+
         //CRUD::addClause('where', 'team_id', backpack_user()->id);
-    
+
+        $user = backpack_user();
+
+        if ($user->hasRole('client')) {
+            $projectIds = \App\Models\ProjectRequest::where('client_id', $user->id)
+                ->where('status', 'accepted')
+                ->whereNotNull('converted_to_project_id')
+                ->pluck('converted_to_project_id');
+            CRUD::addClause('whereIn', 'id', $projectIds);
+        } elseif ($user->hasRole('manager')) {
+            CRUD::addClause('where', 'manager_id', $user->id);
+        } else {
+            CRUD::addClause('where', 'team_id', $user->ownedTeams()->first()->id ?? 0);
+        }
+
         CRUD::column('name')->label('Nome');
         CRUD::column('team_id')
             ->type('select')
@@ -68,11 +86,6 @@ class ProjectCrudController extends CrudController
         CRUD::column('status')->label('Stato');
         CRUD::column('deadline')->type('date')->label('Scadenza');
         CRUD::column('created_at')->type('datetime')->label('Data Creazione');
-
-        /**
-         * Columns can be defined using the fluent syntax:
-         * - CRUD::column('price')->type('number');
-         */
     }
 
     /**
@@ -105,6 +118,24 @@ class ProjectCrudController extends CrudController
                 'completed' => 'Completato',
                 'archived'  => 'Archiviato',
             ]);
+
+
+            // Solo l'admin può assegnare un manager
+            if (backpack_user()->hasRole('admin')) {
+                CRUD::field('manager_id')
+                    ->type('select')
+                    ->label('Assegna a Manager')
+                    ->model('App\Models\User')
+                    ->attribute('name')
+                    ->options(function($query) {
+                        return $query->whereHas('roles', function($q) {
+                            $q->where('name', 'manager');
+                        })->whereHas('teams', function($q) {
+                            $q->where('teams.id', backpack_user()->ownedTeams()->first()->id);
+                        })->get();
+                    })
+                    ->allows_null(true);
+            }
             
         CRUD::field('deadline')->type('date')->label('Scadenza');
     }

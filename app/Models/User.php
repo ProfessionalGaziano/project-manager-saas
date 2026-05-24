@@ -65,4 +65,16 @@ class User extends Authenticatable implements MustVerifyEmail
         return $this->hasMany(Task::class, 'assigned_to');
     }
     
+
+    // L'utente ha molte richieste come client
+    public function projectRequests()
+    {
+        return $this->hasMany(ProjectRequest::class, 'client_id');
+    }
+
+    // L'utente ha molte richieste assegnate come admin
+    public function assignedRequests()
+    {
+        return $this->hasMany(ProjectRequest::class, 'assigned_admin_id');
+    }
 }

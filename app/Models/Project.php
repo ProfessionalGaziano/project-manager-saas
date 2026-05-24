@@ -14,6 +14,7 @@ class Project extends Model
 
     protected $fillable = [
         'team_id',
+        'manager_id',    
         'name',
         'description',
         'status',
@@ -36,6 +37,12 @@ class Project extends Model
     public function invoices()
     {
         return $this->hasMany(Invoice::class);
+    }
+
+    // Il progetto è assegnato a un manager
+    public function manager()
+    {
+        return $this->belongsTo(User::class, 'manager_id');
     }
 
 }

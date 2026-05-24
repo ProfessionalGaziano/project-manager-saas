@@ -10,11 +10,16 @@
 @endif
 
 @if(backpack_user()->hasAnyRole(['admin', 'manager']))
-    <x-backpack::menu-item title="Invoices" icon="la la-file-invoice" :link="backpack_url('invoice')" />
     <x-backpack::menu-item title="Tasks" icon="la la-tasks" :link="backpack_url('task')" />
+    <x-backpack::menu-item title="Invoices" icon="la la-file-invoice" :link="backpack_url('invoice')" />
+@endif
+
+@if(backpack_user()->hasRole('employee'))
+    <x-backpack::menu-item title="I miei Task" icon="la la-tasks" :link="backpack_url('task')" />
 @endif
 
 @if(backpack_user()->hasRole('admin'))
     <x-backpack::menu-item title="Abbonamento" icon="la la-credit-card" :link="url('subscription/plans')" />
     <x-backpack::menu-item title="Invita Utenti" icon="la la-user-plus" :link="url('invitation')" />
 @endif
+

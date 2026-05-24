@@ -33,7 +33,7 @@ class TaskCrudController extends CrudController
         $user = backpack_user();
         
         // Admin e manager possono gestire i task
-        if (!backpack_user()->hasAnyRole(['admin', 'manager'])) {
+        if (!backpack_user()->hasAnyRole(['admin', 'manager', 'employee'])) {
             abort(403, 'Non hai i permessi per accedere a questa sezione.');
         }
 
@@ -42,8 +42,10 @@ class TaskCrudController extends CrudController
         return;
         }
 
-        if (!$user->hasAnyRole(['admin', 'manager'])) {
-            abort(403, 'Non hai i permessi per accedere a questa sezione.');
+         // Employee può solo aggiornare i task assegnati a lui
+        if ($user->hasRole('employee')) {
+            CRUD::denyAccess(['create', 'delete']);
+            return;
         }
     }
 
@@ -58,6 +60,23 @@ class TaskCrudController extends CrudController
         CRUD::addClause('whereHas', 'project', function($query) {
             $query->where('team_id', session('active_team_id'));
         });
+
+        $user = backpack_user();
+
+        if ($user->hasRole('manager')) {
+            // Manager vede solo i task dei progetti assegnati a lui
+            CRUD::addClause('whereHas', 'project', function($query) use ($user) {
+                $query->where('manager_id', $user->id);
+            });
+        } elseif ($user->hasRole('employee')) {
+            // Employee vede solo i task assegnati a lui
+            CRUD::addClause('where', 'assigned_to', $user->id);
+        } else {
+            // Admin vede tutti i task del team
+            CRUD::addClause('whereHas', 'project', function($query) use ($user) {
+                $query->where('team_id', $user->ownedTeams()->first()->id ?? 0);
+            });
+        }
 
         CRUD::column('title')->label('Titolo');
         CRUD::column('project_id')
@@ -75,10 +94,6 @@ class TaskCrudController extends CrudController
         CRUD::column('status')->label('Stato');
         CRUD::column('priority')->label('Priorità');
         CRUD::column('due_date')->type('date')->label('Scadenza');
-        /**
-         * Columns can be defined using the fluent syntax:
-         * - CRUD::column('price')->type('number');
-         */
     }
 
     /**
@@ -100,6 +115,7 @@ class TaskCrudController extends CrudController
                 return $query->where('team_id', session('active_team_id'))->get();
         });
 
+
         CRUD::field('project_id')
             ->type('select')
             ->label('Progetto')
@@ -107,14 +123,19 @@ class TaskCrudController extends CrudController
             ->attribute('name');
 
         CRUD::field('assigned_to')
-            ->type('select')
-            ->label('Assegnato a')
-            ->model('App\Models\User')
-            ->attribute('name')
+        ->type('select')
+        ->label('Assegnato a')
+        ->model('App\Models\User')
+        ->attribute('name')
         ->options(function($query) {
-            // Mostra solo gli utenti che appartengono al team attivo
-            return $query->whereHas('teams', function($q) {
-                $q->where('teams.id', session('active_team_id'));
+            return $query->whereHas('roles', function($q) {
+                $q->where('name', 'employee');
+            })->whereHas('teams', function($q) {
+                // Prendi gli employee del team dell'admin
+                $teamId = backpack_user()->hasRole('admin') 
+                    ? backpack_user()->ownedTeams()->first()->id
+                    : backpack_user()->teams()->first()->id;
+                $q->where('teams.id', $teamId);
             })->get();
         })
         ->allows_null(true);

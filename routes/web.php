@@ -54,4 +54,25 @@ Route::get('/test-mail', function () {
     return 'mail inviata';
 });
 
+Route::middleware([backpack_middleware()])->group(function () {
+    Route::get('/subscription/plans', [App\Http\Controllers\SubscriptionController::class, 'plans'])->name('subscription.plans');
+    Route::post('/subscription/checkout', [App\Http\Controllers\SubscriptionController::class, 'checkout'])->name('subscription.checkout');
+    Route::get('/subscription/success', [App\Http\Controllers\SubscriptionController::class, 'success'])->name('subscription.success');
+    Route::post('/subscription/cancel', [App\Http\Controllers\SubscriptionController::class, 'cancel'])->name('subscription.cancel');
+});
+
+// Rotte per le richieste di progetto
+Route::middleware([backpack_middleware()])->group(function () {
+    
+    // Client
+    Route::get('/project-requests', [App\Http\Controllers\ProjectRequestController::class, 'index'])->name('project-requests.index');
+    Route::post('/project-requests', [App\Http\Controllers\ProjectRequestController::class, 'store'])->name('project-requests.store');
+    
+    // Admin
+    //Route::get('/project-requests/admin', [App\Http\Controllers\ProjectRequestController::class, 'adminIndex'])->name('project-requests.admin');
+    Route::post('/project-requests/{projectRequest}/accept', [App\Http\Controllers\ProjectRequestController::class, 'accept'])->name('project-requests.accept');
+    Route::post('/project-requests/{projectRequest}/reject', [App\Http\Controllers\ProjectRequestController::class, 'reject'])->name('project-requests.reject');
+});
+
+
 require __DIR__.'/auth.php';
