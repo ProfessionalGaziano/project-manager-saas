@@ -1,5 +1,6 @@
 @extends(backpack_view('blank'))
 
+
 @php
     // Non mostrare nulla prima del contenuto
 @endphp

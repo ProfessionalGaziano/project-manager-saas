@@ -5,6 +5,9 @@ namespace App\Http\Controllers;
 use App\Models\ProjectRequest;
 use App\Models\Project;
 use Illuminate\Http\Request;
+use App\Mail\ProjectRequestAccepted;
+use App\Mail\ProjectRequestRejected;
+use Illuminate\Support\Facades\Mail;
 
 class ProjectRequestController extends Controller
 {
@@ -74,6 +77,10 @@ class ProjectRequestController extends Controller
             'converted_to_project_id' => $project->id,
         ]);
 
+        
+        Mail::to($projectRequest->client->email)->send(new ProjectRequestAccepted($projectRequest));
+       
+
         return redirect()->to('/admin/dashboard')
             ->with('success', 'Richiesta accettata! Il progetto è stato creato in bozza.');
     }
@@ -96,6 +103,8 @@ class ProjectRequestController extends Controller
         ]);
 
         // TODO: Invia email al client con la motivazione del rifiuto
+        // Invia email al client con motivazione
+        Mail::to($projectRequest->client->email)->send(new ProjectRequestRejected($projectRequest));
 
         return redirect()->to('/admin/dashboard')
               ->with('success', 'Richiesta rifiutata.');

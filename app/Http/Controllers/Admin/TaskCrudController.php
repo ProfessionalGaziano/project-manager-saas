@@ -5,6 +5,8 @@ namespace App\Http\Controllers\Admin;
 use App\Http\Requests\TaskRequest;
 use Backpack\CRUD\app\Http\Controllers\CrudController;
 use Backpack\CRUD\app\Library\CrudPanel\CrudPanelFacade as CRUD;
+use App\Events\TaskAssigned;
+
 
 /**
  * Class TaskCrudController
@@ -96,6 +98,10 @@ class TaskCrudController extends CrudController
         CRUD::column('due_date')->type('date')->label('Scadenza');
     }
 
+public function updated(Task $task): void
+{
+    
+}
     /**
      * Define what happens when the Create operation is loaded.
      * 
@@ -105,6 +111,7 @@ class TaskCrudController extends CrudController
 
     protected function setupCreateOperation()
     {
+        
         CRUD::setValidation(TaskRequest::class);
         CRUD::field('project_id')
             ->type('select')
