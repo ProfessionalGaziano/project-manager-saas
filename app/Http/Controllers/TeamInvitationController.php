@@ -13,9 +13,22 @@ use App\Models\TeamInvitation;
 
 class TeamInvitationController extends Controller
 {
+    
     // Admin invia un invito
     public function invite(Request $request)
     {
+
+        // Controlla limite piano Free
+        $team = backpack_user()->ownedTeams()->first();
+
+        if ($team->plan === 'free') {
+            $memberCount = $team->users()->count();
+            
+            if ($memberCount >= 3) {
+                return back()->with('error', 'Hai raggiunto il limite di 3 membri per il piano Free. Passa al piano Pro per continuare.');
+            }
+        }
+        
         $request->validate([
             'email' => 'required|email',
             'role' => 'required|in:manager,employee,client',

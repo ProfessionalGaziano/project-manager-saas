@@ -5,6 +5,7 @@ namespace App\Http\Controllers\Admin;
 use App\Http\Requests\ProjectRequest;
 use Backpack\CRUD\app\Http\Controllers\CrudController;
 use Backpack\CRUD\app\Library\CrudPanel\CrudPanelFacade as CRUD;
+use Illuminate\Http\Request;
 
 /**
  * Class ProjectCrudController
@@ -53,6 +54,7 @@ class ProjectCrudController extends CrudController
      * @see  https://backpackforlaravel.com/docs/crud-operation-list-entries
      * @return void
      */
+
     protected function setupListOperation()
     {
         CRUD::addClause('where', 'team_id', session('active_team_id'));
@@ -85,9 +87,11 @@ class ProjectCrudController extends CrudController
             ->attribute('name');
         CRUD::column('status')->label('Stato');
         CRUD::column('deadline')->type('date')->label('Scadenza');
+        
         CRUD::column('created_at')->type('datetime')->label('Data Creazione');
     }
 
+    
     /**
      * Define what happens when the Create operation is loaded.
      * 
@@ -99,6 +103,20 @@ class ProjectCrudController extends CrudController
        
         CRUD::setValidation(ProjectRequest::class);
         CRUD::field('team_id')->value(session('active_team_id'))->type('hidden');
+
+        CRUD::setOperationSetting('saveAllInputsExcept', ['_token', '_method', 'http_referrer', 'current_tab', 'save_action']);
+
+          // Controlla limite piano Free
+        if (backpack_user()->hasRole('admin')) {
+            $team = backpack_user()->ownedTeams()->first();
+            if ($team && $team->plan === 'free') {
+                $projectCount = \App\Models\Project::where('team_id', $team->id)->count();
+                if ($projectCount >= 3) {
+                    CRUD::denyAccess('create');
+                    x\Alert::warning('Hai raggiunto il limite di 3 progetti del piano Free. Passa al piano Pro per creare progetti illimitati!')->flash();
+                }
+            }
+        }
 
         CRUD::field('team_id')
             ->type('select')
@@ -138,6 +156,9 @@ class ProjectCrudController extends CrudController
             }
             
         CRUD::field('deadline')->type('date')->label('Scadenza');
+        CRUD::setValidation([
+        'deadline' => 'required|date|after_or_equal:today|before_or_equal:' . now()->addYears(2)->toDateString(),
+            ]);
     }
 
     /**

@@ -12,6 +12,8 @@ class Team extends Model
 {
     use CrudTrait, HasFactory, SoftDeletes, Billable;
 
+    protected $subscriptionModel = \Laravel\Cashier\Subscription::class;
+
     protected $fillable = [
         'name',
         'slug',

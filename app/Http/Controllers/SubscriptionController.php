@@ -39,14 +39,21 @@ class SubscriptionController extends Controller
         return redirect('/admin')->with('success', 'Abbonamento Pro attivato con successo!');
     }
 
-    // Cancella l'abbonamento
     public function cancel()
     {
         $team = backpack_user()->ownedTeams()->first();
-        $team->subscription('default')->cancel();
+        
+        // Controlla se esiste una subscription attiva
+        $subscription = $team->subscription('default');
+        
+        if ($subscription) {
+            $subscription->cancel();
+        }
+        
+        // Aggiorna il piano a free in ogni caso
         $team->update(['plan' => 'free']);
 
         return redirect()->route('subscription.plans')
-            ->with('success', 'Abbonamento cancellato.');
+            ->with('success', 'Abbonamento cancellato. Ora sei nel piano Free.');
     }
 }

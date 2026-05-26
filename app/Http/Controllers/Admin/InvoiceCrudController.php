@@ -41,6 +41,15 @@ class InvoiceCrudController extends CrudController
         CRUD::denyAccess(['create', 'update', 'delete']);
         return;
         }
+
+        // Blocca le fatture per il piano Free
+        if (backpack_user()->hasRole('admin')) {
+            $team = backpack_user()->ownedTeams()->first();
+            if ($team && $team->plan === 'free') {
+                CRUD::denyAccess(['create', 'update', 'delete']);
+                \Alert::warning('Le fatture sono disponibili solo nel piano Pro. Passa al piano Pro per utilizzarle!')->flash();
+            }
+        }
     }
 
     /**
@@ -49,6 +58,7 @@ class InvoiceCrudController extends CrudController
      * @see  https://backpackforlaravel.com/docs/crud-operation-list-entries
      * @return void
      */
+
     protected function setupListOperation()
     {
         CRUD::addClause('whereHas', 'team', function($query) {
@@ -74,6 +84,7 @@ class InvoiceCrudController extends CrudController
 
         CRUD::column('issued_at')->type('date')->label('Data Emissione');
         CRUD::column('due_at')->type('date')->label('Data Scadenza');
+        
     }
 
     /**
@@ -123,7 +134,13 @@ class InvoiceCrudController extends CrudController
             ]);
 
         CRUD::field('issued_at')->type('date')->label('Data Emissione');
+        CRUD::setValidation([
+        'issued_at' => 'required|date|after_or_equal:today|before_or_equal:' . now()->addYears(2)->toDateString(),
+            ]);
         CRUD::field('due_at')->type('date')->label('Data Scadenza');
+        CRUD::setValidation([
+        'due_at' => 'required|date|after_or_equal:today|before_or_equal:' . now()->addYears(2)->toDateString(),
+            ]);
         CRUD::field('notes')->type('textarea')->label('Note');
     }
 

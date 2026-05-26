@@ -57,6 +57,7 @@ class TaskCrudController extends CrudController
      * @see  https://backpackforlaravel.com/docs/crud-operation-list-entries
      * @return void
      */
+
     protected function setupListOperation()
     {
         CRUD::addClause('whereHas', 'project', function($query) {
@@ -98,10 +99,6 @@ class TaskCrudController extends CrudController
         CRUD::column('due_date')->type('date')->label('Scadenza');
     }
 
-public function updated(Task $task): void
-{
-    
-}
     /**
      * Define what happens when the Create operation is loaded.
      * 
@@ -112,6 +109,20 @@ public function updated(Task $task): void
     protected function setupCreateOperation()
     {
         
+        // Controlla limite piano Free
+        if (backpack_user()->hasRole('admin')) {
+            $team = backpack_user()->ownedTeams()->first();
+            if ($team && $team->plan === 'free') {
+                $taskCount = \App\Models\Task::whereHas('project', function($q) use ($team) {
+                    $q->where('team_id', $team->id);
+                })->count();
+                if ($taskCount >= 10) {
+                    CRUD::denyAccess('create');
+                    \Alert::warning('Hai raggiunto il limite di 10 task del piano Free. Passa al piano Pro per crearne illimitati!')->flash();
+                }
+            }
+        }
+
         CRUD::setValidation(TaskRequest::class);
         CRUD::field('project_id')
             ->type('select')
@@ -170,6 +181,9 @@ public function updated(Task $task): void
             ]);
 
         CRUD::field('due_date')->type('date')->label('Scadenza');
+        CRUD::setValidation([
+        'due_date' => 'required|date|after_or_equal:today|before_or_equal:' . now()->addYears(2)->toDateString(),
+         ]);
     }
     
     /**

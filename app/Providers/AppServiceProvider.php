@@ -7,7 +7,8 @@ use App\Models\Task;
 use App\Models\Project;
 use App\Observers\TaskObserver;
 use App\Observers\ProjectObserver;
-
+use App\Models\Invoice;
+use App\Observers\InvoiceObserver;
 
 
 class AppServiceProvider extends ServiceProvider
@@ -27,5 +28,6 @@ class AppServiceProvider extends ServiceProvider
     {
          Task::observe(TaskObserver::class);
          Project::observe(ProjectObserver::class);
+         Invoice::observe(InvoiceObserver::class);
     }
 }

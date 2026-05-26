@@ -2,11 +2,45 @@
 
 
 @php
-    // Non mostrare nulla prima del contenuto
+    
 @endphp
 
 @section('content')
+    {{-- Benvenuto e piano attuale --}}
+{{-- Benvenuto e piano attuale --}}
+<div class="container-fluid mb-4">
+    <div class="card shadow-sm">
+        <div class="card-body p-4">
+           @php 
+                $team = backpack_user()->ownedTeams()->first();
+                $plan = $team ? $team->plan : 'nessun team';
+            @endphp 
 
+           <div class="d-flex justify-content-between align-items-center">
+                <div>
+                    <h4 class="mb-1">👋 Bentornato, {{ backpack_user()->name }}!</h4>
+                    @if(backpack_user()->hasRole('admin') && $team)
+                        <p class="text-muted mb-0">
+                            Stai utilizzando il piano 
+                           @if($team->plan === 'pro')
+                                <span style="background-color: #28a745; color: white; padding: 4px 8px; border-radius: 4px; font-size: 14px;">⭐ Pro</span>
+                            @else
+                                <span style="background-color: #dc3545; color: white; padding: 4px 8px; border-radius: 4px; font-size: 14px;">🆓 Free</span>
+                            @endif
+                        </p>
+                    @else
+                        <p class="text-muted mb-0">Bentornato nel pannello!</p>
+                    @endif
+                </div>
+                @if(backpack_user()->hasRole('admin') && $team && $team->plan === 'free')
+                    <a href="{{ url('subscription/plans') }}" class="btn btn-warning btn-sm">
+                        ⚡ Passa al Pro
+                    </a>
+                @endif
+            </div>
+        </div>
+    </div>
+</div>
     {{-- Toast notifica --}}
     @if(session('success'))
     <div class="position-fixed top-0 end-0 p-3" style="z-index: 9999">
