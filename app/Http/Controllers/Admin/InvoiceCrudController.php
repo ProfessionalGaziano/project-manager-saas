@@ -62,27 +62,19 @@ class InvoiceCrudController extends CrudController
     protected function setupListOperation()
     {
         CRUD::addClause('whereHas', 'team', function($query) {
-             $query->where('owner_id', backpack_user()->id);
+        $query->where('owner_id', backpack_user()->id);
         });
 
         CRUD::column('number')->label('Numero Fattura');
-
-        CRUD::column('team_id')
-            ->type('select')
-            ->label('Team')
-            ->model('App\Models\Team')
-            ->attribute('name');
-
         CRUD::column('project_id')
             ->type('select')
             ->label('Progetto')
             ->model('App\Models\Project')
-            ->attribute('name');
-
-        CRUD::column('amount')->label('Importo');
+            ->attribute('name')
+            ->entity('project');
+        CRUD::column('amount')->label('Importo €');
         CRUD::column('status')->label('Stato');
-
-        CRUD::column('issued_at')->type('date')->label('Data Emissione');
+        CRUD::column('issued_at')->type('date')->label('Data Emissione');   
         CRUD::column('due_at')->type('date')->label('Data Scadenza');
         
     }
@@ -120,8 +112,8 @@ class InvoiceCrudController extends CrudController
         })
         ->allows_null(true);
 
-        CRUD::field('number')->type('text')->label('Numero Fattura');
-        CRUD::field('amount')->type('number')->label('Importo')->attributes(['step' => '0.01']);
+
+        CRUD::field('number')->type('hidden');
 
         CRUD::field('status')
             ->type('select_from_array')

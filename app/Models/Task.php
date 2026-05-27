@@ -22,6 +22,10 @@ class Task extends Model
         'due_date',
     ];
 
+    protected $casts = [
+    'due_date' => 'date',
+    ];
+
     // Il task appartiene a un progetto
     public function project()
     {
