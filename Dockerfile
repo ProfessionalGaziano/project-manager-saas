@@ -1,54 +1,87 @@
 FROM php:8.4-apache
 
-# Install system dependencies
+# ------------------------
+# 1. DEPENDENCIES SISTEMA
+# ------------------------
 RUN apt-get update && apt-get install -y \
     git \
     curl \
+    unzip \
+    zip \
     libpng-dev \
     libonig-dev \
     libxml2-dev \
     libzip-dev \
-    zip \
-    unzip \
     nodejs \
-    npm
+    npm \
+    && docker-php-ext-install \
+        pdo_mysql \
+        mbstring \
+        exif \
+        pcntl \
+        bcmath \
+        gd \
+        zip
 
-# Install PHP extensions
-RUN docker-php-ext-install pdo_mysql mbstring exif pcntl bcmath gd zip
-
-# Enable Apache mod_rewrite
+# ------------------------
+# 2. APACHE CONFIG
+# ------------------------
 RUN a2enmod rewrite
 
-# Install Composer
+# DocumentRoot su Laravel /public
+ENV APACHE_DOCUMENT_ROOT=/var/www/html/public
+
+RUN sed -ri -e 's!/var/www/html!${APACHE_DOCUMENT_ROOT}!g' \
+    /etc/apache2/sites-available/*.conf
+
+RUN sed -ri -e 's!/var/www/!${APACHE_DOCUMENT_ROOT}!g' \
+    /etc/apache2/apache2.conf /etc/apache2/conf-available/*.conf
+
+# ServerName fix (evita warning)
+RUN echo "ServerName localhost" >> /etc/apache2/apache2.conf
+
+# ------------------------
+# 3. COMPOSER
+# ------------------------
 COPY --from=composer:latest /usr/bin/composer /usr/bin/composer
 
-# Set working directory
 WORKDIR /var/www/html
 
-# Copy project files
+# ------------------------
+# 4. COPY PROGETTO
+# ------------------------
 COPY . .
 
-# Install PHP dependencies
-RUN composer install --optimize-autoloader --no-dev --no-interaction
+# ------------------------
+# 5. PHP DEPENDENCIES
+# ------------------------
+RUN composer install --no-dev --optimize-autoloader --no-interaction
 
-# Install Node dependencies and build assets
+# ------------------------
+# 6. FRONTEND BUILD (OPZIONALE)
+# ------------------------
 RUN npm install && npm run build
 
-# Set Apache document root to Laravel public folder
-RUN sed -i 's|/var/www/html|/var/www/html/public|g' /etc/apache2/sites-available/000-default.conf
+# ------------------------
+# 7. PERMISSIONS
+# ------------------------
+RUN chown -R www-data:www-data \
+    storage \
+    bootstrap/cache
 
-# Set permissions
-RUN chown -R www-data:www-data /var/www/html/storage /var/www/html/bootstrap/cache
+RUN chmod -R 775 storage bootstrap/cache
+RUN rm -rf bootstrap/cache/*.php
 
-# Run migrations on startup
-# Run migrations on startup
-RUN echo '#!/bin/bash\nphp artisan config:clear\nphp artisan migrate --force\nphp artisan storage:link\nexec apache2-foreground' > /usr/local/bin/start.sh
-RUN chmod +x /usr/local/bin/start.sh
+# ------------------------
+# 8. ENTRYPOINT PULITO
+# ------------------------
+COPY docker/start.sh /start.sh
+RUN chmod +x /start.sh
 
-# Configure Apache to use Railway PORT
-RUN echo 'Listen ${PORT}' >> /etc/apache2/ports.conf
-RUN sed -i 's|<VirtualHost \*:80>|<VirtualHost *:${PORT}>|g' /etc/apache2/sites-available/000-default.conf
-
+# ------------------------
+# 9. PORT CONFIG (RENDER)
+# ------------------------
+ENV PORT=80
 EXPOSE 80
 
-CMD ["/usr/local/bin/start.sh"]
+CMD ["/start.sh"]
