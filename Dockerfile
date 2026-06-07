@@ -41,8 +41,13 @@ RUN sed -i 's|/var/www/html|/var/www/html/public|g' /etc/apache2/sites-available
 RUN chown -R www-data:www-data /var/www/html/storage /var/www/html/bootstrap/cache
 
 # Run migrations on startup
-RUN echo '#!/bin/bash\nphp artisan config:clear\nphp artisan migrate --force\nphp artisan storage:link\napache2-foreground' > /usr/local/bin/start.sh
+# Run migrations on startup
+RUN echo '#!/bin/bash\nphp artisan config:clear\nphp artisan migrate --force\nphp artisan storage:link\nexec apache2-foreground' > /usr/local/bin/start.sh
 RUN chmod +x /usr/local/bin/start.sh
+
+# Configure Apache to use Railway PORT
+RUN echo 'Listen ${PORT}' >> /etc/apache2/ports.conf
+RUN sed -i 's|<VirtualHost \*:80>|<VirtualHost *:${PORT}>|g' /etc/apache2/sites-available/000-default.conf
 
 EXPOSE 80
 
