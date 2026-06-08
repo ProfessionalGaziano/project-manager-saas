@@ -1,32 +1,13 @@
 FROM php:8.4-apache
 
-# ------------------------
-# SYSTEM DEPENDENCIES
-# ------------------------
 RUN apt-get update && apt-get install -y \
-    git \
-    curl \
-    unzip \
-    zip \
-    libpng-dev \
-    libonig-dev \
-    libxml2-dev \
-    libzip-dev \
-    nodejs \
-    npm \
+    git curl unzip zip \
+    libpng-dev libonig-dev libxml2-dev libzip-dev \
+    nodejs npm \
     && docker-php-ext-install \
-        pdo_mysql \
-        mbstring \
-        exif \
-        pcntl \
-        bcmath \
-        gd \
-        zip \
+        pdo_mysql mbstring exif pcntl bcmath gd zip \
     && apt-get clean
 
-# ------------------------
-# APACHE CONFIG
-# ------------------------
 RUN a2enmod rewrite
 
 ENV APACHE_DOCUMENT_ROOT=/var/www/html/public
@@ -40,65 +21,28 @@ RUN sed -ri -e 's!/var/www/!${APACHE_DOCUMENT_ROOT}!g' \
 
 RUN echo "ServerName localhost" >> /etc/apache2/apache2.conf
 
-# ------------------------
-# COMPOSER
-# ------------------------
 COPY --from=composer:latest /usr/bin/composer /usr/bin/composer
 
-# ------------------------
-# APP
-# ------------------------
 WORKDIR /var/www/html
 
 COPY . .
 
-# ------------------------
-# PHP DEPENDENCIES
-# ------------------------
-RUN composer install \
-    --no-dev \
-    --optimize-autoloader \
-    --no-interaction
+RUN composer install --no-dev --optimize-autoloader --no-interaction
 
-# ------------------------
-# FRONTEND BUILD (IMPORTANT FIX)
-# ------------------------
 RUN npm install
-
-# 👉 FIX CRITICO: forza URL corretto SOLO per build Vite
-ENV APP_URL=https://project-manager-saas-jk6i.onrender.com
-
 RUN npm run build
 
-# ------------------------
-# LARAVEL OPTIMIZATION (DOPO BUILD)
-# ------------------------
-RUN npm run build
-
-RUN php artisan optimize:clear
-RUN php artisan config:clear
-RUN php artisan cache:clear
-RUN php artisan view:clear
-RUN php artisan config:cache
-
-# ------------------------
-# CLEANUP
-# ------------------------
 RUN rm -rf bootstrap/cache/*.php
 
-# ------------------------
-# PERMISSIONS
-# ------------------------
 RUN chown -R www-data:www-data storage bootstrap/cache \
     && chmod -R 775 storage bootstrap/cache
 
-# ------------------------
-# START SCRIPT
-# ------------------------
 RUN printf '#!/bin/bash\n\
 set -e\n\
-echo "Starting Laravel..."\n\
-php artisan optimize:clear || true\n\
+php artisan migrate --force || true\n\
+php artisan config:cache || true\n\
+php artisan route:cache || true\n\
+php artisan view:cache || true\n\
 php artisan storage:link || true\n\
 exec apache2-foreground\n' > /usr/local/bin/start.sh
 
