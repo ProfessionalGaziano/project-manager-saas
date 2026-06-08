@@ -25,18 +25,11 @@ RUN apt-get update && apt-get install -y \
     && apt-get clean
 
 # ------------------------
-# APACHE
+# APACHE CONFIG
 # ------------------------
 RUN a2enmod rewrite
 
 ENV APACHE_DOCUMENT_ROOT=/var/www/html/public
-
-ENV DB_CONNECTION=mysql
-ENV DB_HOST=127.0.0.1
-ENV DB_PORT=3306
-ENV DB_DATABASE=project_manager_saas
-ENV DB_USERNAME=root
-ENV DB_PASSWORD=y
 
 RUN sed -ri -e 's!/var/www/html!${APACHE_DOCUMENT_ROOT}!g' \
     /etc/apache2/sites-available/*.conf
@@ -81,15 +74,15 @@ RUN rm -rf bootstrap/cache/*.php
 # ------------------------
 # PERMISSIONS
 # ------------------------
-RUN chown -R www-data:www-data storage bootstrap/cache
-
-RUN chmod -R 775 storage bootstrap/cache
+RUN chown -R www-data:www-data storage bootstrap/cache \
+    && chmod -R 775 storage bootstrap/cache
 
 # ------------------------
-# STARTUP SCRIPT
+# START SCRIPT
 # ------------------------
 RUN printf '#!/bin/bash\n\
 set -e\n\
+echo "Starting Laravel..."\n\
 php artisan optimize:clear || true\n\
 php artisan storage:link || true\n\
 exec apache2-foreground\n' > /usr/local/bin/start.sh
