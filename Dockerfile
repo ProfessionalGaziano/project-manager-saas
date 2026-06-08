@@ -1,7 +1,7 @@
 FROM php:8.4-apache
 
 # ------------------------
-# 1. DEPENDENCIES SISTEMA
+# SYSTEM DEPENDENCIES
 # ------------------------
 RUN apt-get update && apt-get install -y \
     git \
@@ -21,70 +21,77 @@ RUN apt-get update && apt-get install -y \
         pcntl \
         bcmath \
         gd \
-        zip
+        zip \
+    && apt-get clean
 
 # ------------------------
-# 2. APACHE CONFIG
+# APACHE
 # ------------------------
 RUN a2enmod rewrite
 
-# DocumentRoot su Laravel /public
 ENV APACHE_DOCUMENT_ROOT=/var/www/html/public
-ENV DB_CONNECTION=mysql
-ENV CACHE_STORE=array
-ENV SESSION_DRIVER=array
 
 RUN sed -ri -e 's!/var/www/html!${APACHE_DOCUMENT_ROOT}!g' \
     /etc/apache2/sites-available/*.conf
 
 RUN sed -ri -e 's!/var/www/!${APACHE_DOCUMENT_ROOT}!g' \
-    /etc/apache2/apache2.conf /etc/apache2/conf-available/*.conf
+    /etc/apache2/apache2.conf \
+    /etc/apache2/conf-available/*.conf
 
-# ServerName fix (evita warning)
 RUN echo "ServerName localhost" >> /etc/apache2/apache2.conf
 
 # ------------------------
-# 3. COMPOSER
+# COMPOSER
 # ------------------------
 COPY --from=composer:latest /usr/bin/composer /usr/bin/composer
 
+# ------------------------
+# APP
+# ------------------------
 WORKDIR /var/www/html
 
-# ------------------------
-# 4. COPY PROGETTO
-# ------------------------
 COPY . .
 
 # ------------------------
-# 5. PHP DEPENDENCIES
+# PHP DEPENDENCIES
 # ------------------------
-RUN composer install --no-dev --optimize-autoloader --no-interaction
+RUN composer install \
+    --no-dev \
+    --optimize-autoloader \
+    --no-interaction
 
 # ------------------------
-# 6. FRONTEND BUILD (OPZIONALE)
+# FRONTEND BUILD
 # ------------------------
-RUN npm install && npm run build
+RUN npm install
+RUN npm run build
 
 # ------------------------
-# 7. PERMISSIONS
+# CACHE CLEANUP
 # ------------------------
-RUN chown -R www-data:www-data \
-    storage \
-    bootstrap/cache
-
-RUN chmod -R 775 storage bootstrap/cache
 RUN rm -rf bootstrap/cache/*.php
 
 # ------------------------
-# 8. ENTRYPOINT PULITO
+# PERMISSIONS
 # ------------------------
-RUN echo '#!/bin/bash\nset -e\nphp artisan config:clear\nphp artisan cache:clear\nphp artisan migrate --force\nphp artisan storage:link\nexec apache2-foreground' > /usr/local/bin/start.sh
+RUN chown -R www-data:www-data storage bootstrap/cache
+
+RUN chmod -R 775 storage bootstrap/cache
+
+# ------------------------
+# STARTUP SCRIPT
+# ------------------------
+RUN printf '#!/bin/bash\n\
+set -e\n\
+php artisan optimize:clear || true\n\
+php artisan storage:link || true\n\
+exec apache2-foreground\n' > /usr/local/bin/start.sh
+
 RUN chmod +x /usr/local/bin/start.sh
 
 # ------------------------
-# 9. PORT CONFIG (RENDER)
+# PORT
 # ------------------------
-ENV PORT=80
 EXPOSE 80
 
-CMD ["/start.sh"]
+CMD ["/usr/local/bin/start.sh"]
