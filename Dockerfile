@@ -31,6 +31,13 @@ RUN a2enmod rewrite
 
 ENV APACHE_DOCUMENT_ROOT=/var/www/html/public
 
+ENV DB_CONNECTION=mysql
+ENV DB_HOST=127.0.0.1
+ENV DB_PORT=3306
+ENV DB_DATABASE=project_manager_saas
+ENV DB_USERNAME=root
+ENV DB_PASSWORD=y
+
 RUN sed -ri -e 's!/var/www/html!${APACHE_DOCUMENT_ROOT}!g' \
     /etc/apache2/sites-available/*.conf
 
