@@ -34,16 +34,30 @@ RUN npm run build
 
 RUN rm -rf bootstrap/cache/*.php
 
-RUN chown -R www-data:www-data storage bootstrap/cache \
+# ------------------------
+# FIX PERMISSIONS + LOG DIRECTORY (CRITICO)
+# ------------------------
+RUN mkdir -p storage/logs \
+    && chown -R www-data:www-data storage bootstrap/cache \
     && chmod -R 775 storage bootstrap/cache
 
+# ------------------------
+# START SCRIPT (RUNTIME FIX COMPLETO)
+# ------------------------
 RUN printf '#!/bin/bash\n\
 set -e\n\
+\n\
+echo "Fixing permissions at runtime..."\n\
+mkdir -p storage/logs\n\
+chown -R www-data:www-data storage bootstrap/cache\n\
+chmod -R 775 storage bootstrap/cache\n\
+\n\
 php artisan migrate --force || true\n\
 php artisan config:cache || true\n\
 php artisan route:cache || true\n\
 php artisan view:cache || true\n\
 php artisan storage:link || true\n\
+\n\
 exec apache2-foreground\n' > /usr/local/bin/start.sh
 
 RUN chmod +x /usr/local/bin/start.sh
