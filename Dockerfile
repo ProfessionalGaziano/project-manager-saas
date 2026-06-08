@@ -3,12 +3,16 @@ FROM php:8.4-apache
 # ------------------------
 # SYSTEM DEPENDENCIES
 # ------------------------
+
 RUN apt-get update && apt-get install -y \
     git curl unzip zip \
     libpng-dev libonig-dev libxml2-dev libzip-dev \
     nodejs npm \
     && docker-php-ext-install \
-        pdo_mysql mbstring exif pcntl bcmath gd zip \
+        pdo \
+        pdo_mysql \
+        mbstring exif pcntl bcmath gd zip \
+    && docker-php-ext-enable pdo_mysql \
     && apt-get clean
 
 # ------------------------
