@@ -1,5 +1,8 @@
 FROM php:8.4-apache
 
+# ------------------------
+# SYSTEM DEPENDENCIES
+# ------------------------
 RUN apt-get update && apt-get install -y \
     git curl unzip zip \
     libpng-dev libonig-dev libxml2-dev libzip-dev \
@@ -8,6 +11,9 @@ RUN apt-get update && apt-get install -y \
         pdo_mysql mbstring exif pcntl bcmath gd zip \
     && apt-get clean
 
+# ------------------------
+# APACHE CONFIG
+# ------------------------
 RUN a2enmod rewrite
 
 ENV APACHE_DOCUMENT_ROOT=/var/www/html/public
@@ -21,36 +27,52 @@ RUN sed -ri -e 's!/var/www/!${APACHE_DOCUMENT_ROOT}!g' \
 
 RUN echo "ServerName localhost" >> /etc/apache2/apache2.conf
 
+# ------------------------
+# COMPOSER
+# ------------------------
 COPY --from=composer:latest /usr/bin/composer /usr/bin/composer
 
 WORKDIR /var/www/html
 
+# ------------------------
+# APP COPY
+# ------------------------
 COPY . .
 
+# ------------------------
+# INSTALL DEPENDENCIES
+# ------------------------
 RUN composer install --no-dev --optimize-autoloader --no-interaction
 
 RUN npm install
 RUN npm run build
 
-RUN rm -rf bootstrap/cache/*.php
+# ------------------------
+# STORAGE FIX (BUILD TIME SAFETY)
+# ------------------------
+RUN mkdir -p storage/logs bootstrap/cache
 
-# ------------------------
-# FIX PERMISSIONS + LOG DIRECTORY (CRITICO)
-# ------------------------
-RUN mkdir -p storage/logs \
-    && chown -R www-data:www-data storage bootstrap/cache \
+RUN chown -R www-data:www-data storage bootstrap/cache \
     && chmod -R 775 storage bootstrap/cache
 
 # ------------------------
-# START SCRIPT (RUNTIME FIX COMPLETO)
+# CLEAN
+# ------------------------
+RUN rm -rf bootstrap/cache/*.php
+
+# ------------------------
+# START SCRIPT
 # ------------------------
 RUN printf '#!/bin/bash\n\
 set -e\n\
 \n\
-echo "Fixing permissions at runtime..."\n\
-mkdir -p storage/logs\n\
-chown -R www-data:www-data storage bootstrap/cache\n\
-chmod -R 775 storage bootstrap/cache\n\
+echo "Runtime storage fix..."\n\
+\n\
+mkdir -p /var/www/html/storage/logs\n\
+touch /var/www/html/storage/logs/laravel.log || true\n\
+\n\
+chown -R www-data:www-data /var/www/html/storage /var/www/html/bootstrap/cache || true\n\
+chmod -R 775 /var/www/html/storage /var/www/html/bootstrap/cache || true\n\
 \n\
 php artisan migrate --force || true\n\
 php artisan config:cache || true\n\
