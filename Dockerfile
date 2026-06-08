@@ -61,13 +61,24 @@ RUN composer install \
     --no-interaction
 
 # ------------------------
-# FRONTEND BUILD
+# FRONTEND BUILD (IMPORTANT FIX)
 # ------------------------
 RUN npm install
+
+# 👉 FIX CRITICO: forza URL corretto SOLO per build Vite
+ENV APP_URL=https://project-manager-saas-jk6i.onrender.com
+
 RUN npm run build
 
 # ------------------------
-# CACHE CLEANUP
+# LARAVEL OPTIMIZATION (DOPO BUILD)
+# ------------------------
+RUN php artisan optimize:clear || true
+RUN php artisan config:cache || true
+RUN php artisan route:cache || true
+
+# ------------------------
+# CLEANUP
 # ------------------------
 RUN rm -rf bootstrap/cache/*.php
 
@@ -89,9 +100,6 @@ exec apache2-foreground\n' > /usr/local/bin/start.sh
 
 RUN chmod +x /usr/local/bin/start.sh
 
-# ------------------------
-# PORT
-# ------------------------
 EXPOSE 80
 
 CMD ["/usr/local/bin/start.sh"]
