@@ -30,6 +30,9 @@ RUN a2enmod rewrite
 
 # DocumentRoot su Laravel /public
 ENV APACHE_DOCUMENT_ROOT=/var/www/html/public
+ENV DB_CONNECTION=mysql
+ENV CACHE_STORE=array
+ENV SESSION_DRIVER=array
 
 RUN sed -ri -e 's!/var/www/html!${APACHE_DOCUMENT_ROOT}!g' \
     /etc/apache2/sites-available/*.conf
@@ -75,8 +78,8 @@ RUN rm -rf bootstrap/cache/*.php
 # ------------------------
 # 8. ENTRYPOINT PULITO
 # ------------------------
-COPY docker/start.sh /start.sh
-RUN chmod +x /start.sh
+RUN echo '#!/bin/bash\nset -e\nphp artisan config:clear\nphp artisan cache:clear\nphp artisan migrate --force\nphp artisan storage:link\nexec apache2-foreground' > /usr/local/bin/start.sh
+RUN chmod +x /usr/local/bin/start.sh
 
 # ------------------------
 # 9. PORT CONFIG (RENDER)
