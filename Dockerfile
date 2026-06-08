@@ -73,9 +73,13 @@ RUN npm run build
 # ------------------------
 # LARAVEL OPTIMIZATION (DOPO BUILD)
 # ------------------------
-RUN php artisan optimize:clear || true
-RUN php artisan config:cache || true
-RUN php artisan route:cache || true
+RUN npm run build
+
+RUN php artisan optimize:clear
+RUN php artisan config:clear
+RUN php artisan cache:clear
+RUN php artisan view:clear
+RUN php artisan config:cache
 
 # ------------------------
 # CLEANUP
